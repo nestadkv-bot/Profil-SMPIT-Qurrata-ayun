@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMPIT Qurrata'ayun Kandangan - Islamic Modern School</title>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Import Map for React, Lucide, and Gemini SDK -->
+    <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "lucide-react": "https://esm.sh/lucide-react@0.344.0?deps=react@18.2.0",
+    "@google/genai": "https://esm.run/@google/genai",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/"
+  }
+}
+</script>
+
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            200: '#a7f3d0',
+                            300: '#6ee7b7',
+                            400: '#34d399',
+                            500: '#10b981', // Emerald Green - Islamic Theme
+                            600: '#059669',
+                            700: '#047857',
+                            800: '#065f46',
+                            900: '#064e3b',
+                        },
+                        accent: {
+                            500: '#f59e0b', // Gold/Amber
+                            600: '#d97706',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Merriweather', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Custom CSS -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Merriweather', serif;
+        }
+        .pattern-grid {
+            background-image: radial-gradient(#10b981 1px, transparent 1px);
+            background-size: 20px 20px;
+            opacity: 0.1;
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+    </style>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- MAIN APP SCRIPT -->
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useRef } from 'react';
+        import ReactDOM from 'react-dom/client';
+        import { GoogleGenAI } from "@google/genai";
+        import { 
+            Menu as MenuIcon, 
+            X as XIcon, 
+            BookOpen as BookOpenIcon, 
+            ArrowRight as ArrowRightIcon, 
+            Star as StarIcon, 
+            Book as BookIcon, 
+            Heart as HeartIcon, 
+            Users as UsersIcon, 
+            Award as AwardIcon, 
+            PenTool as PenToolIcon, 
+            Globe as GlobeIcon, 
+            Target as TargetIcon, 
+            Compass as CompassIcon, 
+            MapPin as MapPinIcon, 
+            Phone as PhoneIcon, 
+            Mail as MailIcon, 
+            Facebook as FacebookIcon, 
+            Instagram as InstagramIcon, 
+            Youtube as YoutubeIcon, 
+            Map as MapIcon, 
+            MessageCircle as MessageCircleIcon, 
+            Send as SendIcon, 
+            Loader2 as Loader2Icon, 
+            Bot as BotIcon 
+        } from "lucide-react";
+
+        // --- SERVICES ---
+        
+        // PENTING: Ganti string kosong di bawah ini dengan API Key Gemini Anda jika ingin AI berfungsi.
+        const GEMINI_API_KEY = ""; 
+
+        const SCHOOL_CONTEXT = `
+        Anda adalah asisten virtual resmi untuk SMPIT Qurrata'ayun, sekolah Islam Terpadu modern di Kandangan.
+        Alamat: Jl. Ahmad Yani, Kandangan Kota, Kec. Kandangan, Kab. Hulu Sungai Selatan, Kalsel 71217.
+        Visi: Mencetak generasi Qurani yang cerdas, mandiri, dan berakhlak mulia.
+        Info: Fokus Tahfidz Qur'an, Kurikulum JSIT + Nasional, Ekskul (Panahan, Futsal, Pramuka).
+        Gaya: Ramah, Islami (Assalamu'alaikum), Informatif.
+        `;
+
+        const sendMessageToGemini = async (message, history) => {
+            if (!GEMINI_API_KEY) {
+                return "Mohon maaf, API Key belum dikonfigurasi oleh administrator website ini.";
+            }
+            try {
+                const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+                const chat = ai.chats.create({
+                    model: 'gemini-2.5-flash',
+                    config: {
+                        systemInstruction: SCHOOL_CONTEXT,
+                        temperature: 0.7,
+                        maxOutputTokens: 500,
+                    },
+                    history: history 
+                });
+                const response = await chat.sendMessage({ message });
+                return response.text || "Maaf, saya tidak dapat memproses permintaan Anda.";
+            } catch (error) {
+                console.error("Gemini Error:", error);
+                return "Mohon maaf, terjadi kesalahan koneksi.";
+            }
+        };
+
+        // --- COMPONENTS ---
+
+        const Navigation = () => {
+            const [isOpen, setIsOpen] = useState(false);
+            const [scrolled, setScrolled] = useState(false);
+
+            useEffect(() => {
+                const handleScroll = () => {
+                    setScrolled(window.scrollY > 20);
+                };
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+
+            const navItems = [
+                { name: 'Beranda', href: '#home' },
+                { name: 'Profil', href: '#about' },
+                { name: 'Program', href: '#programs' },
+                { name: 'Galeri', href: '#gallery' },
+                { name: 'Kontak', href: '#contact' },
+            ];
+
+            const handleNavClick = (e, href) => {
+                e.preventDefault();
+                setIsOpen(false);
+                const targetId = href.replace('#', '');
+                const element = document.getElementById(targetId);
+                
+                if (element) {
+                    const navHeight = 80;
+                    const elementPosition = element.getBoundingClientRect().top + window.scrollY;
+                    const offsetPosition = elementPosition - navHeight;
+
+                    window.scrollTo({
+                        top: offsetPosition < 0 ? 0 : offsetPosition,
+                        behavior: "smooth"
+                    });
+                }
+            };
+
+            return (
+                <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white shadow-md py-2' : 'bg-white/95 backdrop-blur-sm py-4 shadow-sm'}`}>
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="flex justify-between items-center h-12 md:h-auto">
+                            <div className="flex-shrink-0 flex items-center gap-3 cursor-pointer" onClick={(e) => handleNavClick(e, '#home')}>
+                                <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center text-white">
+                                    <BookOpenIcon size={24} className="stroke-current" />
+                                </div>
+                                <div>
+                                    <h1 className="text-xl font-bold text-gray-800 font-serif leading-none">SMPIT Qurrata'ayun</h1>
+                                    <p className="text-xs text-primary-600 font-medium tracking-wider">KANDANGAN</p>
+                                </div>
+                            </div>
+
+                            <div className="hidden md:flex items-center space-x-8">
+                                {navItems.map((item) => (
+                                    <a key={item.name} href={item.href} onClick={(e) => handleNavClick(e, item.href)} className="text-gray-600 hover:text-primary-600 font-medium transition-colors duration-200 text-sm uppercase tracking-wide cursor-pointer">
+                                        {item.name}
+                                    </a>
+                                ))}
+                                <a href="#contact" onClick={(e) => handleNavClick(e, '#contact')} className="bg-primary-600 hover:bg-primary-700 text-white px-5 py-2 rounded-full font-medium transition-colors shadow-lg shadow-primary-500/30 text-sm cursor-pointer">
+                                    PPDB Online
+                                </a>
+                            </div>
+
+                            <div className="md:hidden flex items-center">
+                                <button onClick={() => setIsOpen(!isOpen)} className="text-gray-600 hover:text-primary-600 focus:outline-none p-2">
+                                    {isOpen ? <XIcon size={28} /> : <MenuIcon size={28} />}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {isOpen && (
+                        <div className="md:hidden bg-white border-t border-gray-100 absolute w-full shadow-xl top-full left-0">
+                            <div className="px-4 pt-2 pb-6 space-y-2">
+                                {navItems.map((item) => (
+                                    <a key={item.name} href={item.href} onClick={(e) => handleNavClick(e, item.href)} className="block px-3 py-3 text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-md cursor-pointer">
+                                        {item.name}
+                                    </a>
+                                ))}
+                                <a href="#contact" onClick={(e) => handleNavClick(e, '#contact')} className="block w-full text-center mt-4 bg-primary-600 text-white px-3 py-3 rounded-md font-medium cursor-pointer">
+                                    Daftar Sekarang
+                                </a>
+                            </div>
+                        </div>
+                    )}
+                </nav>
+            );
+        };
+
+        const Hero = () => {
+            return (
+                <section id="home" className="relative pt-24 pb-12 lg:pt-32 lg:pb-24 overflow-hidden scroll-mt-20">
+                    <div className="absolute inset-0 pattern-grid pointer-events-none"></div>
+                    <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-primary-100 rounded-full blur-3xl opacity-50"></div>
+                    <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-accent-100 rounded-full blur-3xl opacity-50"></div>
+
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                        <div className="grid lg:grid-cols-2 gap-12 items-center">
+                            <div className="text-center lg:text-left space-y-8">
+                                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-50 border border-primary-100 text-primary-700 text-sm font-semibold">
+                                    <StarIcon size={16} className="fill-current" />
+                                    <span>Penerimaan Peserta Didik Baru Telah Dibuka</span>
+                                </div>
+                                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight font-serif">
+                                    Mewujudkan Generasi <span className="text-primary-600">Qur'ani</span> yang Cerdas & Berkarakter
+                                </h1>
+                                <p className="text-lg text-gray-600 leading-relaxed max-w-2xl mx-auto lg:mx-0">
+                                    SMPIT Qurrata'ayun Kandangan memadukan kurikulum nasional dan nilai-nilai Islam untuk membentuk pemimpin masa depan yang berakhlak mulia.
+                                </p>
+                                <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                                    <a href="#contact" className="inline-flex items-center justify-center px-8 py-3.5 border border-transparent text-base font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 shadow-lg shadow-primary-600/30 transition-all duration-200 transform hover:-translate-y-1">
+                                        Daftar Sekarang
+                                        <div className="ml-2"><ArrowRightIcon size={20} /></div>
+                                    </a>
+                                    <a href="#programs" className="inline-flex items-center justify-center px-8 py-3.5 border border-gray-300 text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 hover:text-primary-600 transition-colors">
+                                        Lihat Program
+                                    </a>
+                                </div>
+                                <div className="pt-8 border-t border-gray-200 flex justify-center lg:justify-start gap-8">
+                                    <div>
+                                        <p className="text-3xl font-bold text-gray-900">15+</p>
+                                        <p className="text-sm text-gray-500 uppercase tracking-wide">Tahun Pengabdian</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-3xl font-bold text-gray-900">500+</p>
+                                        <p className="text-sm text-gray-500 uppercase tracking-wide">Alumni Hafidz</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-3xl font-bold text-gray-900">A</p>
+                                        <p className="text-sm text-gray-500 uppercase tracking-wide">Akreditasi</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="relative lg:block">
+                                <div className="relative rounded-2xl overflow-hidden shadow-2xl border-8 border-white">
+                                    <img src="https://picsum.photos/800/600?random=1" alt="Siswa SMPIT" className="w-full h-full object-cover transform transition-transform duration-700 hover:scale-105" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                                    <div className="absolute bottom-6 left-6 text-white">
+                                        <p className="font-bold text-lg">Kegiatan Belajar Mengajar</p>
+                                        <p className="text-sm text-gray-200">Suasana kelas yang interaktif dan islami</p>
+                                    </div>
+                                </div>
+                                <div className="absolute -bottom-6 -left-6 bg-white p-4 rounded-xl shadow-xl max-w-xs hidden md:block">
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-accent-100 p-2 rounded-lg text-accent-600">
+                                            <StarIcon size={24} className="fill-current" />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-gray-900">Tahfidz Al-Qur'an</p>
+                                            <p className="text-xs text-gray-500">Program Unggulan Sekolah</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
+        const About = () => {
+            return (
+                <section id="about" className="py-20 bg-white scroll-mt-20">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="grid lg:grid-cols-2 gap-12 items-center">
+                            <div className="relative order-2 lg:order-1">
+                                <div className="absolute inset-0 bg-primary-200 rounded-3xl transform rotate-3 scale-105 opacity-30"></div>
+                                <img src="https://picsum.photos/600/800?random=2" alt="Kegiatan Siswa" className="relative rounded-3xl shadow-lg w-full object-cover h-[500px] z-10" />
+                                <div className="absolute -bottom-6 -right-6 z-20 bg-white p-6 rounded-xl shadow-xl border-l-4 border-primary-600 max-w-xs hidden sm:block">
+                                    <p className="text-gray-600 italic font-medium">
+                                        "Mendidik dengan Hati, Membina dengan Keteladanan"
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="order-1 lg:order-2 space-y-8">
+                                <div>
+                                    <h2 className="text-primary-600 font-semibold tracking-wide uppercase mb-2">Profil Sekolah</h2>
+                                    <h3 className="text-3xl md:text-4xl font-bold text-gray-900 font-serif leading-tight">
+                                        Membangun Generasi Emas Berlandaskan Al-Qur'an
+                                    </h3>
+                                </div>
+                                <p className="text-lg text-gray-600 leading-relaxed">
+                                    SMPIT Qurrata'ayun Kandangan adalah lembaga pendidikan tingkat menengah pertama yang berkomitmen menyelenggarakan pendidikan integral berbasis nilai-nilai Islam.
+                                </p>
+                                <div className="space-y-6 mt-8">
+                                    <div className="flex gap-4">
+                                        <div className="flex-shrink-0">
+                                            <div className="w-12 h-12 bg-primary-100 text-primary-600 rounded-lg flex items-center justify-center">
+                                                <CompassIcon size={24} />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <h4 className="text-xl font-bold text-gray-900 mb-2">Visi Kami</h4>
+                                            <p className="text-gray-600">Mencetak generasi Qurani yang cerdas, mandiri, dan berakhlak mulia serta mampu bersaing di era global.</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <div className="flex-shrink-0">
+                                            <div className="w-12 h-12 bg-accent-100 text-accent-600 rounded-lg flex items-center justify-center">
+                                                <TargetIcon size={24} />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <h4 className="text-xl font-bold text-gray-900 mb-2">Misi Utama</h4>
+                                            <ul className="list-disc list-inside text-gray-600 space-y-1 ml-1">
+                                                <li>Pendidikan tahfidz Al-Qur'an berkualitas.</li>
+                                                <li>Budaya sekolah islami dan disiplin.</li>
+                                                <li>Pengembangan potensi akademik.</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
+        const Features = () => {
+            const programs = [
+                { icon: <BookIcon className="w-8 h-8 text-primary-600" />, title: "Tahfidz Al-Qur'an", desc: "Program intensif menghafal Al-Qur'an dengan target hafalan terukur." },
+                { icon: <AwardIcon className="w-8 h-8 text-accent-600" />, title: "Akademik Unggul", desc: "Kurikulum Nasional dan JSIT untuk mencetak siswa berprestasi." },
+                { icon: <HeartIcon className="w-8 h-8 text-red-500" />, title: "Bina Pribadi Islam", desc: "Pembinaan karakter (Akhlaq) melalui mentoring dan ibadah harian." },
+                { icon: <GlobeIcon className="w-8 h-8 text-blue-500" />, title: "Bahasa Asing", desc: "Pengembangan kemampuan Bahasa Arab dan Inggris." },
+                { icon: <PenToolIcon className="w-8 h-8 text-purple-500" />, title: "Ekstrakurikuler", desc: "Panahan, Futsal, Pramuka SIT, KIR, dan Cooking Class." },
+                { icon: <UsersIcon className="w-8 h-8 text-green-600" />, title: "Parenting School", desc: "Sinergi sekolah dan orang tua melalui seminar berkala." }
+            ];
+
+            return (
+                <section id="programs" className="py-20 bg-gray-50 scroll-mt-20">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="text-center mb-16">
+                            <h2 className="text-base text-primary-600 font-semibold tracking-wide uppercase">Program Unggulan</h2>
+                            <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl font-serif">Membangun Karakter, <br/>Mengukir Prestasi</p>
+                        </div>
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {programs.map((program, index) => (
+                                <div key={index} className="bg-white rounded-xl p-8 shadow-sm hover:shadow-xl transition-shadow duration-300 border border-gray-100 flex flex-col items-start">
+                                    <div className="p-3 bg-gray-50 rounded-lg mb-4">{program.icon}</div>
+                                    <h3 className="text-xl font-bold text-gray-900 mb-3">{program.title}</h3>
+                                    <p className="text-gray-600 leading-relaxed">{program.desc}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
+        const Gallery = () => {
+            const images = [
+                { url: 'https://picsum.photos/400/300?random=10', title: 'Wisuda Tahfidz' },
+                { url: 'https://picsum.photos/400/300?random=11', title: 'Kegiatan Pramuka' },
+                { url: 'https://picsum.photos/400/300?random=12', title: 'Laboratorium Komputer' },
+                { url: 'https://picsum.photos/400/300?random=13', title: 'Sholat Dhuha' },
+                { url: 'https://picsum.photos/400/300?random=14', title: 'Panahan' },
+                { url: 'https://picsum.photos/400/300?random=15', title: 'Kunjungan Edukatif' },
+            ];
+
+            return (
+                <section id="gallery" className="py-20 bg-white scroll-mt-20">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="flex flex-col md:flex-row justify-between items-end mb-12">
+                            <div>
+                                <h2 className="text-3xl font-bold text-gray-900 font-serif">Galeri Aktivitas</h2>
+                                <p className="mt-2 text-gray-600">Dokumentasi kegiatan siswa SMPIT Qurrata'ayun</p>
+                            </div>
+                            <a href="https://www.instagram.com/smpit.qurrataayun.kdg/" target="_blank" rel="noreferrer" className="mt-4 md:mt-0 text-primary-600 font-medium hover:text-primary-700 flex items-center">
+                                Lihat Instagram
+                                <ArrowRightIcon size={16} className="ml-1" />
+                            </a>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {images.map((img, idx) => (
+                                <div key={idx} className="group relative overflow-hidden rounded-xl shadow-md aspect-[4/3] cursor-pointer">
+                                    <img src={img.url} alt={img.title} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
+                                        <div className="p-6">
+                                            <p className="text-white font-bold text-lg translate-y-4 group-hover:translate-y-0 transition-transform duration-300">{img.title}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            );
+        };
+
+        const Contact = () => {
+            return (
+                <footer id="contact" className="bg-gray-900 text-gray-300 scroll-mt-20">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+                            <div className="space-y-6">
+                                <h3 className="text-2xl font-bold text-white font-serif">SMPIT Qurrata'ayun</h3>
+                                <p className="text-gray-400 leading-relaxed">Mewujudkan pendidikan Islam yang berkualitas, modern, dan terjangkau di Kalimantan Selatan.</p>
+                                <div className="flex space-x-4">
+                                    <a href="#" className="text-gray-400 hover:text-white transition-colors"><FacebookIcon size={24} /></a>
+                                    <a href="https://www.instagram.com/smpit.qurrataayun.kdg/" target="_blank" className="text-gray-400 hover:text-white transition-colors"><InstagramIcon size={24} /></a>
+                                    <a href="#" className="text-gray-400 hover:text-white transition-colors"><YoutubeIcon size={24} /></a>
+                                </div>
+                            </div>
+                            <div className="space-y-6">
+                                <h4 className="text-lg font-semibold text-white">Hubungi Kami</h4>
+                                <div className="space-y-4">
+                                    <div className="flex items-start gap-3">
+                                        <MapPinIcon className="text-primary-500 shrink-0 mt-1" size={20} />
+                                        <span>Jl. Ahmad Yani, Kandangan Kota,<br/>Kec. Kandangan, Kab. HSS,<br/>Kalimantan Selatan 71217</span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <PhoneIcon className="text-primary-500 shrink-0" size={20} />
+                                        <span>+62 812-3456-7890 (Tata Usaha)</span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <MailIcon className="text-primary-500 shrink-0" size={20} />
+                                        <span>info@smpitqurrataayun.sch.id</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="space-y-6">
+                                <h4 className="text-lg font-semibold text-white">Lokasi</h4>
+                                <div className="p-6 bg-gray-800 rounded-lg border border-gray-700 flex flex-col items-center text-center space-y-4">
+                                    <div className="bg-gray-700 p-3 rounded-full"><MapIcon className="text-primary-500" size={32} /></div>
+                                    <div>
+                                        <p className="text-white font-medium mb-1">Kunjungi Sekolah Kami</p>
+                                        <p className="text-sm text-gray-400">Dapatkan petunjuk arah langsung.</p>
+                                    </div>
+                                    <a href="https://www.google.com/maps/search/?api=1&query=SMPIT+Qurrata'ayun+Kandangan+67J7%2BMV5" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md text-sm font-medium transition-colors w-full">
+                                        Buka di Google Maps
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="border-t border-gray-800 mt-12 pt-8 text-center text-sm text-gray-500">
+                            <p>&copy; {new Date().getFullYear()} SMPIT Qurrata'ayun Kandangan. All rights reserved.</p>
+                        </div>
+                    </div>
+                </footer>
+            );
+        };
+
+        const AIAssistant = () => {
+            const [isOpen, setIsOpen] = useState(false);
+            const [input, setInput] = useState('');
+            const [status, setStatus] = useState('IDLE');
+            const [messages, setMessages] = useState([
+                { id: 'welcome', role: 'model', text: "Assalamu'alaikum! Saya asisten virtual SMPIT Qurrata'ayun. Ada yang bisa saya bantu terkait informasi sekolah?", timestamp: new Date() }
+            ]);
+            const messagesEndRef = useRef(null);
+
+            useEffect(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, [messages, isOpen]);
+
+            const handleSend = async () => {
+                if (!input.trim() || status === 'SENDING') return;
+
+                const userMsg = { id: Date.now().toString(), role: 'user', text: input, timestamp: new Date() };
+                setMessages(prev => [...prev, userMsg]);
+                setInput('');
+                setStatus('SENDING');
+
+                try {
+                    const history = messages.map(m => ({ role: m.role, parts: [{ text: m.text }] }));
+                    const responseText = await sendMessageToGemini(userMsg.text, history);
+                    
+                    const aiMsg = { id: (Date.now() + 1).toString(), role: 'model', text: responseText, timestamp: new Date() };
+                    setMessages(prev => [...prev, aiMsg]);
+                    setStatus('IDLE');
+                } catch (error) {
+                    setMessages(prev => [...prev, { id: Date.now().toString(), role: 'model', text: "Maaf, terjadi kesalahan.", timestamp: new Date() }]);
+                    setStatus('IDLE');
+                }
+            };
+
+            return (
+                <>
+                    <button onClick={() => setIsOpen(true)} className={`fixed bottom-6 right-6 z-40 p-4 bg-primary-600 text-white rounded-full shadow-lg hover:bg-primary-700 transition-all duration-300 hover:scale-110 flex items-center justify-center ${isOpen ? 'hidden' : 'flex'}`}>
+                        <MessageCircleIcon size={28} />
+                    </button>
+                    {isOpen && (
+                        <div className="fixed bottom-0 right-0 sm:bottom-6 sm:right-6 z-50 w-full sm:w-96 h-[100dvh] sm:h-[600px] bg-white sm:rounded-2xl shadow-2xl flex flex-col border border-gray-200 overflow-hidden animate-in">
+                            <div className="bg-primary-600 p-4 flex justify-between items-center text-white shrink-0">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-white/20 p-2 rounded-full"><BotIcon size={20} /></div>
+                                    <div><h3 className="font-bold text-sm">Tanya Ustadz AI</h3><p className="text-xs text-primary-100">Online</p></div>
+                                </div>
+                                <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white p-1 hover:bg-white/10 rounded"><XIcon size={20} /></button>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                                {messages.map((msg) => (
+                                    <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                        <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm shadow-sm ${msg.role === 'user' ? 'bg-primary-600 text-white rounded-br-none' : 'bg-white text-gray-800 border border-gray-200 rounded-bl-none'}`}>
+                                            <p className="whitespace-pre-wrap">{msg.text}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                                {status === 'SENDING' && (
+                                    <div className="flex justify-start"><div className="bg-white border px-4 py-3 rounded-2xl"><Loader2Icon size={16} className="animate-spin text-primary-600" /></div></div>
+                                )}
+                                <div ref={messagesEndRef} />
+                            </div>
+                            <div className="p-4 bg-white border-t border-gray-100 shrink-0 flex gap-2">
+                                <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} placeholder="Ketik pesan..." className="flex-1 border rounded-full px-4 py-2 text-sm focus:outline-none focus:border-primary-500" disabled={status === 'SENDING'} />
+                                <button onClick={handleSend} disabled={!input.trim() || status === 'SENDING'} className="bg-primary-600 text-white p-2 rounded-full hover:bg-primary-700"><SendIcon size={20} /></button>
+                            </div>
+                        </div>
+                    )}
+                </>
+            );
+        };
+
+        const App = () => {
+            return (
+                <div className="min-h-screen bg-white">
+                    <Navigation />
+                    <main>
+                        <Hero />
+                        <About />
+                        <Features />
+                        <div className="bg-primary-600 py-16 text-center text-white relative overflow-hidden">
+                             <div className="absolute inset-0 pattern-grid opacity-20"></div>
+                             <div className="relative z-10 max-w-4xl mx-auto px-4">
+                                <h2 className="text-3xl md:text-4xl font-bold font-serif mb-6">Mari Bergabung Bersama Keluarga Besar Kami</h2>
+                                <p className="text-xl mb-8 text-primary-100">Siapkan putra-putri Anda menjadi generasi penghafal Al-Qur'an.</p>
+                                <a href="#contact" className="inline-block bg-white text-primary-600 font-bold py-3 px-8 rounded-full hover:bg-gray-100 transition-colors shadow-lg">Informasi PPDB</a>
+                             </div>
+                        </div>
+                        <Gallery />
+                    </main>
+                    <Contact />
+                    <AIAssistant />
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>

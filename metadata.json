@@ -1,0 +1,7 @@
+{
+  "name": "SMPIT Qurrata'ayun Website",
+  "description": "Modern Islamic School Website for SMPIT Qurrata'ayun Kandangan featuring an AI Assistant for inquiries.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
